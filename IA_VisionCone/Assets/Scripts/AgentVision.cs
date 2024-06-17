@@ -6,144 +6,175 @@
 
 // Importar las librerías necesarias
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-
 
 public class AgentVision : MonoBehaviour
 {
-    public Transform Infiltrator;  // Transform del jugador que el agente está buscando
-    public Transform Agent;  // Transform de la cabeza del agente (punto de referencia para la visión)
+    public Transform player;            // Transform del jugador (infiltrador)
+    public float visionAngle = 30f;     // Ángulo de visión del agente
+    public float visionDistance = 10f;  // Distancia máxima de visión del agente
+    public float rotationInterval = 5f; // Intervalo de rotación del agente
+    public float alertDuration = 5f;    // Duración del estado de alerta
+    public float attackDuration = 5f;   // Duración del estado de ataque
 
-    [Range(0f, 360f)]
-    public float VisionAngle = 30f;  // Rango del ángulo de visión del agente
-    public float VisionDistance = 10f;  // Distancia máxima de visión del agente
+    private enum AgentState { Normal, Alert, Attack }
+    private AgentState currentState = AgentState.Normal;
+    private Vector3 initialPosition;
+    private Vector3 lastKnownPlayerPosition;
+    private bool detected = false;
+    private float alertAccumulatedTime = 0f;
 
-    private bool detected = false;  // Variable para almacenar si el jugador ha sido detectado
-
-    //El giro del agente
-    private float targetRotation = 0f;  // Ángulo de rotación objetivo
-    public float rotationSpeed = 45f;  // Velocidad de rotación en grados por segundo
-
-    private Coroutine rotationCoroutine;  // Referencia a la corrutina de rotación
-
-    private void Start()
+    void Start()
     {
-        // Inicia la rotación del agente
-        StartRotation();
+        initialPosition = transform.position;
+        StartCoroutine(RotatePeriodically());
     }
 
-    private void Update()
+    void Update()
     {
-        // Reinicia la detección
+        switch (currentState)
+        {
+            case AgentState.Normal:
+                NormalStateUpdate();
+                break;
+            case AgentState.Alert:
+                AlertStateUpdate();
+                break;
+            case AgentState.Attack:
+                AttackStateUpdate();
+                break;
+        }
+    }
+
+    void NormalStateUpdate()
+    {
         detected = false;
 
-        // Vector desde la cabeza del agente hasta el jugador
-        Vector3 PlayerVector = Infiltrator.position - Agent.position;
+        Vector3 directionToPlayer = player.position - transform.position;
+        float angleToPlayer = Vector3.Angle(directionToPlayer, transform.forward);
 
-        // Comprueba si el jugador está dentro del ángulo de visión
-        if (Vector3.Angle(PlayerVector, Agent.forward) < VisionAngle * 0.5f)
+        if (angleToPlayer < visionAngle / 2 && directionToPlayer.magnitude < visionDistance)
         {
-            // Comprueba si el jugador está dentro de la distancia de visión
-            if (PlayerVector.magnitude < VisionDistance)
+            detected = true;
+            lastKnownPlayerPosition = player.position;
+            currentState = AgentState.Alert;
+            StartCoroutine(MoveToLastKnownPosition());
+        }
+    }
+
+    IEnumerator MoveToLastKnownPosition()
+    {
+        while (currentState == AgentState.Alert)
+        {
+            Vector3 moveDirection = lastKnownPlayerPosition - transform.position;
+            float distanceToPlayer = moveDirection.magnitude;
+
+            if (distanceToPlayer < 0.1f)
             {
-                // Si ambas condiciones se cumplen, el jugador es detectado
-                detected = true;
+                currentState = AgentState.Normal;
+                StartCoroutine(RotatePeriodically());
+                yield break;
             }
-        }
 
-        // Si el jugador es detectado, detén el giro
-        if (detected)
-        {
-            StopRotation();
-        }
-        else
-        {
-            // Si no es detectado, continúa girando
-            StartRotation();  // Asegura que la rotación esté activa
+            float moveSpeed = 2f;
+            Vector3 move = moveDirection.normalized * moveSpeed * Time.deltaTime;
+            transform.position += move;
+
+            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, 180f * Time.deltaTime);
+
+            yield return null;
         }
     }
 
-    private void OnDrawGizmos()
+    void AlertStateUpdate()
     {
-        // Si el ángulo de visión es menor o igual a 0, no hacer nada
-        if (VisionAngle <= 0f) return;
+        visionAngle += 30f;
 
-        // Calcular la mitad del ángulo de visión
-        float HalfVisionAngle = VisionAngle * 0.5f;
+        alertAccumulatedTime += Time.deltaTime;
 
-        // Calcular los puntos en los extremos del ángulo de visión
-        Vector3 p1 = PointForAngle(HalfVisionAngle, VisionDistance);
-        Vector3 p2 = PointForAngle(-HalfVisionAngle, VisionDistance);
-
-        // Cambiar el color del Gizmo según si el jugador ha sido detectado o no
-        Gizmos.color = detected ? Color.yellow : Color.blue;
-
-        // Dibujar las líneas del cono de visión
-        Gizmos.DrawLine(Agent.position, Agent.position + p1);
-        Gizmos.DrawLine(Agent.position, Agent.position + p2);
-        // Dibujar una línea central hacia adelante desde la cabeza
-        Gizmos.DrawRay(Agent.position, Agent.forward * VisionDistance);
-    }
-
-    // Método para calcular un punto en el espacio 3D dado un ángulo y una distancia
-    Vector3 PointForAngle(float Angle, float Distance)
-    {
-        // Convertir el ángulo a radianes
-        float rad = Angle * Mathf.Deg2Rad;
-        // Calcular y devolver el punto usando seno y coseno
-        return Agent.TransformDirection(new Vector3(Mathf.Sin(rad), 0, Mathf.Cos(rad)) * Distance);
-    }
-
-    // Método para iniciar la rotación del agente hacia el ángulo objetivo
-    private void StartRotation()
-    {
-        if (rotationCoroutine == null)
+        if (alertAccumulatedTime >= 1f && detected)
         {
-            // Calcula el ángulo objetivo sumando 90 grados al ángulo actual
-            targetRotation = Agent.eulerAngles.y + 90f;
-            rotationCoroutine = StartCoroutine(RotateToTarget());
+            currentState = AgentState.Attack;
+            StartCoroutine(AttackSequence());
+            return;
         }
+
+        StartCoroutine(WaitForAlert());
     }
 
-    // Método para detener la rotación del agente
-    public void StopRotation()
+    IEnumerator WaitForAlert()
     {
-        if (rotationCoroutine != null)
-        {
-            StopCoroutine(rotationCoroutine);
-            rotationCoroutine = null;
-        }
+        yield return new WaitForSeconds(alertDuration);
+
+        currentState = AgentState.Normal;
+        visionAngle = 30f;
+        alertAccumulatedTime = 0f;
+        StartCoroutine(RotatePeriodically());
     }
 
-    // Corrutina para rotar el agente hacia el ángulo objetivo
-    private IEnumerator RotateToTarget()
+    void AttackStateUpdate()
     {
-        float startRotation = Agent.eulerAngles.y;
-        float timer = 0f;
+        StartCoroutine(AttackSequence());
+    }
 
-        while (timer < 2f)  // Rotar durante 2 segundos
+    IEnumerator AttackSequence()
+    {
+        float elapsedTime = 0f;
+        while (elapsedTime < attackDuration)
         {
-            float angle = Mathf.Lerp(startRotation, targetRotation, timer / 2f);
-            Agent.rotation = Quaternion.Euler(0, angle, 0);
-            timer += Time.deltaTime;
+            Vector3 moveDirection = player.position - transform.position;
+            float moveSpeed = 5f;
+            transform.position += moveDirection.normalized * moveSpeed * Time.deltaTime;
+
+            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, 360f * Time.deltaTime);
+
+            if (moveDirection.magnitude < 0.5f)
+            {
+                player.gameObject.SetActive(false); // Desactivar el GameObject del infiltrador
+                currentState = AgentState.Normal;
+                StartCoroutine(RotatePeriodically());
+                yield break;
+            }
+
+            elapsedTime += Time.deltaTime;
             yield return null;
         }
 
-        // Asegura que el agente termine exactamente en el ángulo objetivo
-        Agent.rotation = Quaternion.Euler(0, targetRotation, 0);
+        currentState = AgentState.Normal;
+        StartCoroutine(RotatePeriodically());
+    }
 
-        // Espera un breve momento antes de reiniciar la rotación si no se ha detenido
-        yield return new WaitForSeconds(3f);
 
-        if (detected == false)
+    IEnumerator RotatePeriodically()
+    {
+        while (true)
         {
-            // Reinicia la rotación si no se ha detectado al jugador
-            StartRotation();
+            transform.Rotate(Vector3.up, 90f);
+            yield return new WaitForSeconds(rotationInterval);
         }
-        else
-        {
-            rotationCoroutine = null;
-        }
+    }
+
+    void OnDrawGizmos()
+    {
+        if (visionAngle <= 0f) return;
+
+        float halfVisionAngle = visionAngle * 0.5f;
+
+        Vector3 p1 = PointForAngle(halfVisionAngle, visionDistance);
+        Vector3 p2 = PointForAngle(-halfVisionAngle, visionDistance);
+
+        Gizmos.color = detected ? Color.yellow : Color.blue;
+
+        Gizmos.DrawLine(transform.position, transform.position + p1);
+        Gizmos.DrawLine(transform.position, transform.position + p2);
+        Gizmos.DrawRay(transform.position, transform.forward * visionDistance);
+    }
+
+    Vector3 PointForAngle(float angle, float distance)
+    {
+        float rad = angle * Mathf.Deg2Rad;
+        return transform.TransformDirection(new Vector3(Mathf.Sin(rad), 0, Mathf.Cos(rad)) * distance);
     }
 }
