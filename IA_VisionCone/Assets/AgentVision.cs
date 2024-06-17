@@ -1,6 +1,9 @@
 //Este còdigo està basado en el video de youtube proporcionado por el profesor
 //https://youtu.be/lV47ED8h61k?si=6m012cxUMIkJvd5z
 
+//Se usó la página de global explorer
+//https://explorer.globe.engineer/
+
 // Importar las librerías necesarias
 using System.Collections;
 using System.Collections.Generic;
