@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1952794821848654062}
   - component: {fileID: 1561535460222518599}
   - component: {fileID: 2032937055988705155}
-  - component: {fileID: 580161451419426559}
+  - component: {fileID: 2627085920413990558}
   m_Layer: 0
   m_Name: NodePrefab
   m_TagString: Untagged
@@ -84,7 +84,7 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!135 &580161451419426559
+--- !u!135 &2627085920413990558
 SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -99,7 +99,7 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3

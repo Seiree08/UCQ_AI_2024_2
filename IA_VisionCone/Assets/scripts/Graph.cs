@@ -17,12 +17,12 @@ public class Node
 }
 
 // Clase que representa una arista entre dos nodos
-public class Edge
+public class Lado
 {
     public Node A; // Nodo A de la arista
     public Node B; // Nodo B de la arista
 
-    public Edge(Node a, Node b)
+    public Lado(Node a, Node b)
     {
         this.A = a;
         this.B = b;
@@ -32,7 +32,7 @@ public class Edge
 // Clase que maneja el grafo y la búsqueda
 public class Graph : MonoBehaviour
 {
-    public List<Edge> edges = new List<Edge>(); // Lista de aristas en el grafo
+    public List<Lado> edges = new List<Lado>(); // Lista de aristas en el grafo
     public List<Node> nodes = new List<Node>(); // Lista de nodos en el grafo
 
     // Prefabs para los nodos y aristas en la escena
@@ -84,13 +84,13 @@ public class Graph : MonoBehaviour
         nodes.Add(h);
 
         // Añadir aristas al grafo según la configuración
-        edges.Add(new Edge(a, b));
-        edges.Add(new Edge(a, e));
-        edges.Add(new Edge(b, c));
-        edges.Add(new Edge(b, d));
-        edges.Add(new Edge(e, f));
-        edges.Add(new Edge(e, g));
-        edges.Add(new Edge(e, h));
+        edges.Add(new Lado(a, b));
+        edges.Add(new Lado(a, e));
+        edges.Add(new Lado(b, c));
+        edges.Add(new Lado(b, d));
+        edges.Add(new Lado(e, f));
+        edges.Add(new Lado(e, g));
+        edges.Add(new Lado(e, h));
 
         // Crear representaciones visuales para nodos y aristas
         CreateVisualNodesAndEdges();
@@ -111,7 +111,7 @@ public class Graph : MonoBehaviour
         }
 
         // Instanciar aristas en la escena
-        foreach (Edge edge in edges)
+        foreach (Lado edge in edges)
         {
             GameObject edgeGO = Instantiate(edgePrefab);
             LineRenderer lr = edgeGO.GetComponent<LineRenderer>();
@@ -198,7 +198,7 @@ public class Graph : MonoBehaviour
     {
         List<Node> neighbors = new List<Node>();
 
-        foreach (Edge edge in edges)
+        foreach (Lado edge in edges)
         {
             if (edge.A == node)
             {
