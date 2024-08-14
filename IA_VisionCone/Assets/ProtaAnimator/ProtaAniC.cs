@@ -17,18 +17,24 @@ public class ProtaAniC : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        bool mantenerwPresionado = Input.GetKey("w");
+        bool mantenerwPresionadow = Input.GetKey("w");
+        bool mantenerwPresionadoa = Input.GetKey("a");
+        bool mantenerwPresionados = Input.GetKey("s");
+        bool mantenerwPresionadod = Input.GetKey("d");
         bool mantenershiftPresionado = Input.GetKey("left shift");
+        bool mantenerctrlPresionado = Input.GetKey("c");
+        bool saltarunaVez = Input.GetKey("space");
        
-        if (mantenerwPresionado)
+        if (mantenerwPresionadow)
         {
             animator.SetBool("IsWalking", true);
         }
         
-        if (!mantenerwPresionado)
+        if (!mantenerwPresionadow)
         {
             animator.SetBool("IsWalking", false);
         }
+
 
 
 
@@ -40,6 +46,26 @@ public class ProtaAniC : MonoBehaviour
         if (!mantenershiftPresionado)
         {
             animator.SetBool("IsRunning", false);
+        }
+
+        if(mantenerctrlPresionado)
+        {
+            animator.SetBool("Crouch", true);
+        }
+
+        if (!mantenerctrlPresionado)
+        {
+            animator.SetBool("Crouch", false);
+        }
+       
+        if (saltarunaVez)
+        {
+            animator.SetBool("IsJumping", true);
+        }
+
+        if (!saltarunaVez)
+        {
+            animator.SetBool("IsJumping", false);
         }
     }
 }

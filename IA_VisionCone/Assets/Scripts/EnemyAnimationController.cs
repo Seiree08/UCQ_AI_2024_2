@@ -18,7 +18,7 @@ public class EnemyAnimationController : MonoBehaviour
         animator = GetComponent<Animator>();
         isWalkingHash = Animator.StringToHash("isWalking");
         isRunningHash = Animator.StringToHash("isRunning");
-        isAlertHash = Animator.StringToHash("isAlert");
+        isAlertHash = Animator.StringToHash("isAlert"); 
     }
 
     // Update is called once per frame
@@ -32,7 +32,6 @@ public class EnemyAnimationController : MonoBehaviour
         bool leftPressed = Input.GetKey(KeyCode.LeftArrow);
         bool rightPressed = Input.GetKey(KeyCode.RightArrow);
         bool runPressed = Input.GetKey(KeyCode.RightShift);
-        bool alertPressed = Input.GetKeyDown(KeyCode.E);
 
         Vector3 moveDirection = Vector3.zero;
 
@@ -88,12 +87,6 @@ public class EnemyAnimationController : MonoBehaviour
             {
                 animator.SetBool(isRunningHash, false);
             }
-        }
-
-        // Lógica para cambiar entre estado "idle" y "isAlert"
-        if (alertPressed)
-        {
-            animator.SetBool(isAlertHash, !isAlert);
         }
     }
 }
